@@ -67,8 +67,21 @@ class Database:
         self.data["payments"].append(payment_data)
         self._save()
 
-    def delete_payment(self, index):
+    def get_transactions(self):
         self.data = self._load()
-        if 0 <= index < len(self.data.get("payments", [])):
-            self.data["payments"].pop(index)
+        return self.data.get("transactions", [])
+
+    def add_transaction(self, tx_data):
+        self.data = self._load()
+        if "transactions" not in self.data:
+            self.data["transactions"] = []
+        self.data["transactions"].append(tx_data)
+        self._save()
+
+    def delete_transaction(self, index):
+        self.data = self._load()
+        txs = self.data.get("transactions", [])
+        if 0 <= index < len(txs):
+            txs.pop(index)
+            self.data["transactions"] = txs
             self._save()
