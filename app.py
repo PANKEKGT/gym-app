@@ -150,6 +150,7 @@ def assign_package(sid):
     return redirect(url_for("packages"))
 
 
+@app.route("/student/add", methods=["GET","POST"])
 def add_student():
     if request.method == "POST":
         db.add_student(_form_to_student(request.form))
@@ -452,4 +453,6 @@ def _form_to_student(form):
     }
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
