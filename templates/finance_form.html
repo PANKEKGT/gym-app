@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set active_page = "finance" %}
+{% block content %}
+<div class="form-card">
+  <h2>➕ Yeni İşlem Ekle</h2>
+  <form method="post">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tür *</label>
+        <select name="type" id="typeSelect" required onchange="updateCategories()">
+          <option value="gelir">↑ Gelir</option>
+          <option value="gider">↓ Gider</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tarih *</label>
+        <input type="date" name="date" value="{{ today }}" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Kategori *</label>
+      <select name="category" id="categorySelect" required>
+        <option value="Üyelik Geliri">Üyelik Geliri</option>
+        <option value="Ders Geliri">Ders Geliri</option>
+        <option value="Diğer Gelir">Diğer Gelir</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tutar (₺) *</label>
+      <input type="number" name="amount" step="0.01" min="0" required placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>Açıklama</label>
+      <input type="text" name="description" placeholder="ör: Mayıs kira ödemesi">
+    </div>
+    <input type="hidden" name="year" value="{{ year }}">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-green">💾 Kaydet</button>
+      <a href="/finance?year={{ year }}" class="btn btn-gray">İptal</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const gelirCats = ['Üyelik Geliri','Ders Geliri','Özel Ders','Diğer Gelir'];
+const giderCats = ['Kira','Elektrik','Su','Doğalgaz','Personel Maaşı',
+                   'Ekipman Alımı','Ekipman Bakım','Temizlik','Reklam',
+                   'Vergi','Sigorta','Diğer Gider'];
+
+function updateCategories() {
+  const type = document.getElementById('typeSelect').value;
+  const sel  = document.getElementById('categorySelect');
+  const cats = type === 'gelir' ? gelirCats : giderCats;
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+updateCategories();
+</script>
+{% endblock %}

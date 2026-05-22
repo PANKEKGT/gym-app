@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% set active_page = "finance" %}
+{% block content %}
+
+<!-- Yıl seçici -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <h2 style="font-size:20px;font-weight:700;color:#111827">💰 Gelir & Gider Takibi</h2>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <a href="/finance?year={{ year-1 }}" class="btn btn-gray btn-sm">◀ {{ year-1 }}</a>
+    <span style="font-size:18px;font-weight:700;color:#111827;padding:0 8px">{{ year }}</span>
+    <a href="/finance?year={{ year+1 }}" class="btn btn-gray btn-sm">{{ year+1 }} ▶</a>
+  </div>
+</div>
+
+<!-- Yıllık özet kartları -->
+<div class="stats" style="margin-bottom:24px">
+  <div class="stat-card">
+    <div class="label">Yıllık Gelir</div>
+    <div class="value" style="color:#16a34a">₺{{ "{:,.0f}".format(yearly_income) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Yıllık Gider</div>
+    <div class="value" style="color:#dc2626">₺{{ "{:,.0f}".format(yearly_expense) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Net Kar</div>
+    <div class="value" style="color:{% if yearly_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %}">
+      ₺{{ "{:,.0f}".format(yearly_profit) }}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Bu Ay Gelir</div>
+    <div class="value" style="color:#2563eb">₺{{ "{:,.0f}".format(this_month_income) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Bu Ay Gider</div>
+    <div class="value" style="color:#f59e0b">₺{{ "{:,.0f}".format(this_month_expense) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Bu Ay Net</div>
+    <div class="value" style="color:{% if this_month_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %}">
+      ₺{{ "{:,.0f}".format(this_month_profit) }}
+    </div>
+  </div>
+</div>
+
+<!-- Aylık tablo -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header">
+    <h2>📊 Aylık Özet — {{ year }}</h2>
+    <a href="/finance/add?year={{ year }}" class="btn btn-green">+ İşlem Ekle</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ay</th>
+          <th data-col="1" style="text-align:right">Gelir</th>
+          <th data-col="2" style="text-align:right">Gider</th>
+          <th data-col="3" style="text-align:right">Net Kar</th>
+          <th style="text-align:center">Durum</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in monthly_summary %}
+        <tr>
+          <td><strong>{{ row.month_name }}</strong></td>
+          <td style="text-align:right;color:#16a34a;font-weight:500">
+            {% if row.income > 0 %}₺{{ "{:,.0f}".format(row.income) }}{% else %}—{% endif %}
+          </td>
+          <td style="text-align:right;color:#dc2626;font-weight:500">
+            {% if row.expense > 0 %}₺{{ "{:,.0f}".format(row.expense) }}{% else %}—{% endif %}
+          </td>
+          <td style="text-align:right;font-weight:700;color:{% if row.profit >= 0 %}#16a34a{% else %}#dc2626{% endif %}">
+            ₺{{ "{:,.0f}".format(row.profit) }}
+          </td>
+          <td style="text-align:center">
+            {% if row.income == 0 and row.expense == 0 %}
+              <span class="badge badge-gray">Veri yok</span>
+            {% elif row.profit >= 0 %}
+              <span class="badge badge-green">Kârlı</span>
+            {% else %}
+              <span class="badge badge-red">Zararlı</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f9fafb;font-weight:700">
+          <td><strong>TOPLAM</strong></td>
+          <td style="text-align:right;color:#16a34a">₺{{ "{:,.0f}".format(yearly_income) }}</td>
+          <td style="text-align:right;color:#dc2626">₺{{ "{:,.0f}".format(yearly_expense) }}</td>
+          <td style="text-align:right;color:{% if yearly_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %}">
+            ₺{{ "{:,.0f}".format(yearly_profit) }}
+          </td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- Gelir grafiği -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header"><h2>📈 Aylık Gelir / Gider Grafiği</h2></div>
+  <div style="padding:20px">
+    {% set max_val = [yearly_income / 12 * 2, 1] | max %}
+    {% for row in monthly_summary %}
+    {% if row.income > 0 or row.expense > 0 %}
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:500">{{ row.month_name }}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="width:40px;font-size:11px;color:#16a34a;text-align:right">Gelir</span>
+        <div style="flex:1;background:#f3f4f6;border-radius:999px;height:16px;overflow:hidden">
+          <div style="width:{{ [((row.income / (max_val if max_val > 0 else 1))*100)|int, 100]|min }}%;height:100%;background:#16a34a;border-radius:999px"></div>
+        </div>
+        <span style="width:80px;font-size:12px;color:#374151">₺{{ "{:,.0f}".format(row.income) }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:40px;font-size:11px;color:#dc2626;text-align:right">Gider</span>
+        <div style="flex:1;background:#f3f4f6;border-radius:999px;height:16px;overflow:hidden">
+          <div style="width:{{ [((row.expense / (max_val if max_val > 0 else 1))*100)|int, 100]|min }}%;height:100%;background:#dc2626;border-radius:999px"></div>
+        </div>
+        <span style="width:80px;font-size:12px;color:#374151">₺{{ "{:,.0f}".format(row.expense) }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- İşlem geçmişi -->
+<div class="card">
+  <div class="card-header">
+    <h2>📋 İşlem Geçmişi — {{ year }}</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="filterType" onchange="filterRows()" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+        <option value="">Tümü</option>
+        <option value="gelir">Sadece Gelir</option>
+        <option value="gider">Sadece Gider</option>
+      </select>
+      <select id="filterCat" onchange="filterRows()" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+        <option value="">Tüm Kategoriler</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}">{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="txTable">
+      <thead>
+        <tr>
+          <th data-col="0">Tarih</th>
+          <th data-col="1">Tür</th>
+          <th data-col="2">Kategori</th>
+          <th data-col="3">Açıklama</th>
+          <th data-col="4" style="text-align:right">Tutar</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+        <tr data-type="{{ tx.type }}" data-cat="{{ tx.category }}">
+          <td>{{ tx.date }}</td>
+          <td>
+            {% if tx.type == 'gelir' %}
+              <span class="badge badge-green">↑ Gelir</span>
+            {% else %}
+              <span class="badge badge-red">↓ Gider</span>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-gray">{{ tx.category }}</span></td>
+          <td style="color:#6b7280">{{ tx.description or '—' }}</td>
+          <td style="text-align:right;font-weight:600;color:{% if tx.type=='gelir' %}#16a34a{% else %}#dc2626{% endif %}">
+            {% if tx.type == 'gelir' %}+{% else %}-{% endif %}₺{{ "{:,.0f}".format(tx.amount) }}
+          </td>
+          <td>
+            <form method="post" action="/finance/delete/{{ tx.idx }}"
+                  onsubmit="return confirm('Bu işlem silinsin mi?')">
+              <button type="submit" class="btn btn-red btn-sm">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af">Bu yıl için işlem kaydı yok.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function filterRows() {
+  const type = document.getElementById('filterType').value;
+  const cat  = document.getElementById('filterCat').value;
+  document.querySelectorAll('#txTable tbody tr[data-type]').forEach(row => {
+    const matchType = !type || row.dataset.type === type;
+    const matchCat  = !cat  || row.dataset.cat  === cat;
+    row.style.display = matchType && matchCat ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
