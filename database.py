@@ -85,3 +85,66 @@ class Database:
             txs.pop(index)
             self.data["transactions"] = txs
             self._save()
+
+    def delete_payment(self, index):
+        self.data = self._load()
+        if 0 <= index < len(self.data.get("payments", [])):
+            self.data["payments"].pop(index)
+            self._save()
+
+    # ---------- Packages ----------
+    def get_packages(self):
+        self.data = self._load()
+        return self.data.get("packages", [])
+
+    def add_package(self, pkg):
+        self.data = self._load()
+        if "packages" not in self.data:
+            self.data["packages"] = []
+        self.data["packages"].append(pkg)
+        self._save()
+
+    def update_package(self, index, pkg):
+        self.data = self._load()
+        if 0 <= index < len(self.data.get("packages",[])):
+            self.data["packages"][index] = pkg
+            self._save()
+
+    def delete_package(self, index):
+        self.data = self._load()
+        pkgs = self.data.get("packages",[])
+        if 0 <= index < len(pkgs):
+            pkgs.pop(index)
+            self.data["packages"] = pkgs
+            self._save()
+
+    # ---------- Attendance ----------
+    def get_attendance(self, student_id):
+        self.data = self._load()
+        return [a for a in self.data.get("attendance",[])
+                if a["student_id"] == student_id]
+
+    def add_attendance(self, student_id, record):
+        self.data = self._load()
+        if "attendance" not in self.data:
+            self.data["attendance"] = []
+        self.data["attendance"] = [
+            a for a in self.data["attendance"]
+            if not (a["student_id"]==student_id and a["date"]==record["date"])
+        ]
+        self.data["attendance"].append({**record, "student_id": student_id})
+        self._save()
+
+    # ---------- Notes ----------
+    def get_notes(self, student_id):
+        self.data = self._load()
+        return [n for n in self.data.get("notes",[])
+                if n["student_id"] == student_id]
+
+    def add_note(self, student_id, note):
+        self.data = self._load()
+        if "notes" not in self.data:
+            self.data["notes"] = []
+        self.data["notes"].append({**note, "student_id": student_id})
+        self._save()
+
