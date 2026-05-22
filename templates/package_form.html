@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% set active_page = "packages" %}
+{% block content %}
+<div class="form-card">
+  <h2>{{ title }}</h2>
+  <form method="post">
+    <div class="form-group">
+      <label>Paket Adı *</label>
+      <input type="text" name="name" value="{{ pkg.name if pkg else '' }}"
+             placeholder="ör: Aylık Standart" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fiyat (₺) *</label>
+        <input type="number" name="price" step="0.01" min="0"
+               value="{{ pkg.price if pkg else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Süre (gün) *</label>
+        <input type="number" name="duration_days" min="1"
+               value="{{ pkg.duration_days if pkg else 30 }}" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Renk</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+        {% set colors = ['#2563eb','#16a34a','#7c3aed','#dc2626','#d97706','#0891b2','#be185d','#111827'] %}
+        {% for c in colors %}
+        <label style="cursor:pointer">
+          <input type="radio" name="color" value="{{ c }}"
+                 {% if pkg and pkg.color == c %}checked{% elif not pkg and c == '#2563eb' %}checked{% endif %}
+                 style="display:none">
+          <span style="display:block;width:32px;height:32px;border-radius:50%;background:{{ c }};
+                       border:3px solid {% if pkg and pkg.color == c %}#111{% else %}transparent{% endif %}"
+                onclick="this.parentElement.querySelector('input').checked=true;
+                         document.querySelectorAll('.color-dot').forEach(d=>d.style.border='3px solid transparent');
+                         this.style.border='3px solid #111'" class="color-dot"></span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Açıklama</label>
+      <textarea name="description" rows="3" placeholder="Paket içeriği, avantajlar...">{{ pkg.description if pkg else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-green">💾 Kaydet</button>
+      <a href="/packages" class="btn btn-gray">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

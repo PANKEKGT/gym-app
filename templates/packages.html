@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% set active_page = "packages" %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+  <h1 style="font-size:22px;font-weight:700;color:#111827">🎯 Paket & Program Tanımlama</h1>
+  <a href="/packages/add" class="btn btn-green">+ Yeni Paket</a>
+</div>
+
+<!-- Paket kartları -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:28px">
+  {% for pkg in packages %}
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="background:{% if pkg.color %}{{ pkg.color }}{% else %}#2563eb{% endif %};padding:18px 20px">
+      <div style="font-size:18px;font-weight:700;color:#fff">{{ pkg.name }}</div>
+      <div style="font-size:28px;font-weight:800;color:#fff;margin-top:6px">₺{{ "{:,.0f}".format(pkg.price) }}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:2px">{{ pkg.duration_days }} günlük üyelik</div>
+    </div>
+    <div style="padding:16px">
+      {% if pkg.description %}
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px">{{ pkg.description }}</p>
+      {% endif %}
+      <div style="font-size:13px;color:#374151;margin-bottom:12px">
+        <span style="color:#6b7280">Aktif üye:</span>
+        <strong>{{ pkg.member_count }}</strong> kişi
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="/packages/edit/{{ loop.index0 }}" class="btn btn-blue btn-sm">✏️ Düzenle</a>
+        <form method="post" action="/packages/delete/{{ loop.index0 }}"
+              onsubmit="return confirm('{{ pkg.name }} silinsin mi?')">
+          <button type="submit" class="btn btn-red btn-sm">🗑️</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;text-align:center;padding:48px;color:#9ca3af">
+    Henüz paket tanımlanmamış. İlk paketi ekleyin!
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Öğrenci - Paket eşleştirme -->
+<div class="card">
+  <div class="card-header"><h2>👥 Öğrenci Paketleri</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="0">Öğrenci</th>
+          <th data-col="1">Mevcut Paket</th>
+          <th data-col="2">Başlangıç</th>
+          <th data-col="3">Bitiş</th>
+          <th data-col="4">Aylık Ücret</th>
+          <th>Paket Ata</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><a href="/student/{{ s.id }}" style="color:#2563eb;font-weight:500;text-decoration:none">{{ s.name }}</a></td>
+          <td>
+            {% if s.get('package') %}
+            <span class="badge badge-green">{{ s.package }}</span>
+            {% else %}
+            <span style="color:#9ca3af">— atanmamış —</span>
+            {% endif %}
+          </td>
+          <td style="color:#6b7280">{{ s.get('start_date','—') }}</td>
+          <td style="color:#6b7280">{{ s.get('end_date','—') }}</td>
+          <td><strong>₺{{ "{:,.0f}".format(s.monthly_fee) }}</strong></td>
+          <td>
+            <form method="post" action="/packages/assign/{{ s.id }}" style="display:flex;gap:6px;align-items:center">
+              <select name="package" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+                <option value="">— Seç —</option>
+                {% for pkg in packages %}
+                <option value="{{ pkg.name }}" {% if s.get('package')==pkg.name %}selected{% endif %}>
+                  {{ pkg.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-purple btn-sm">Ata</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

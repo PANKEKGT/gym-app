@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% set active_page = "students" %}
+{% block content %}
+<div class="form-card">
+  <h2>📝 {{ student.name }} — Not Ekle</h2>
+  <form method="post">
+    <div class="form-group">
+      <label>Not</label>
+      <textarea name="text" rows="5" required placeholder="Öğrenci hakkında not girin..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-green">💾 Kaydet</button>
+      <a href="/student/{{ student.id }}" class="btn btn-gray">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

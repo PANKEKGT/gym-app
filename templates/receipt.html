@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% set active_page = "students" %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <a href="/student/{{ student.id }}" class="btn btn-gray btn-sm">← Geri</a>
+    <div style="display:flex;gap:8px">
+      <button onclick="window.print()" class="btn btn-blue">🖨️ Yazdır / PDF</button>
+    </div>
+  </div>
+
+  <!-- Makbuz -->
+  <div id="receipt" style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden">
+
+    <!-- Header -->
+    <div style="background:#111827;padding:24px 28px;color:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#4ade80">🏋️ GymPro</div>
+          <div style="font-size:13px;color:#9ca3af;margin-top:4px">Spor Salonu Yönetim Sistemi</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:#9ca3af">Makbuz No</div>
+          <div style="font-size:16px;font-weight:700;color:#fff">#{{ receipt_no }}</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:4px">{{ today }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:28px">
+
+      <!-- Öğrenci bilgisi -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+        <div>
+          <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Alıcı</div>
+          <div style="font-size:16px;font-weight:700;color:#111827">{{ student.name }}</div>
+          {% if student.get('phone') %}<div style="font-size:13px;color:#6b7280">{{ student.phone }}</div>{% endif %}
+          {% if student.get('email') %}<div style="font-size:13px;color:#6b7280">{{ student.email }}</div>{% endif %}
+        </div>
+        <div>
+          <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Üyelik</div>
+          <div style="font-size:13px;color:#374151">
+            <div>Başlangıç: <strong>{{ student.get('start_date','—') }}</strong></div>
+            <div>Bitiş: <strong>{{ student.get('end_date','—') }}</strong></div>
+            {% if student.get('package') %}<div>Paket: <strong>{{ student.package }}</strong></div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Ödeme tablosu -->
+      <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px">
+        <div style="background:#f9fafb;padding:10px 16px;display:grid;grid-template-columns:1fr auto auto;gap:12px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase">
+          <span>Açıklama</span><span>Ay</span><span style="text-align:right">Tutar</span>
+        </div>
+        {% for p in last_payments %}
+        <div style="padding:12px 16px;display:grid;grid-template-columns:1fr auto auto;gap:12px;font-size:14px;border-top:1px solid #f3f4f6;align-items:center">
+          <span style="color:#374151">{{ p.note or 'Üyelik Ödemesi' }}</span>
+          <span style="color:#6b7280">{{ p.month }}</span>
+          <span style="font-weight:600;color:#111827;text-align:right">₺{{ "{:,.0f}".format(p.amount) }}</span>
+        </div>
+        {% endfor %}
+        <div style="padding:12px 16px;background:#f9fafb;display:flex;justify-content:space-between;border-top:2px solid #e5e7eb">
+          <span style="font-weight:700;color:#111827">TOPLAM</span>
+          <span style="font-size:18px;font-weight:800;color:#16a34a">₺{{ "{:,.0f}".format(total) }}</span>
+        </div>
+      </div>
+
+      <!-- Durum -->
+      <div style="text-align:center;padding:12px;background:#dcfce7;border-radius:8px;margin-bottom:20px">
+        <span style="color:#15803d;font-weight:700;font-size:15px">✓ ÖDEME ALINDI</span>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align:center;color:#9ca3af;font-size:12px;border-top:1px solid #f3f4f6;padding-top:16px">
+        Bu makbuz GymPro sistemi tarafından otomatik oluşturulmuştur.<br>
+        {{ today }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@media print {
+  nav, .btn, a.btn { display: none !important; }
+  body { background: white; }
+  #receipt { box-shadow: none; }
+}
+</style>
+{% endblock %}
