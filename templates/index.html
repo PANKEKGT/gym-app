@@ -38,7 +38,7 @@
       {% for s in students %}
         {% set dl = days_left(s.get('end_date','')) %}
         <tr>
-          <td><strong>{{ s.name }}</strong></td>
+          <td><a href="/student/{{ s.id }}" style="color:#2563eb;font-weight:600;text-decoration:none">{{ s.name }}</a></td>
           <td>{{ s.get('phone','—') }}</td>
           <td>{{ s.get('schedule','—') }}</td>
           <td>{{ s.get('start_date','—') }}</td>
