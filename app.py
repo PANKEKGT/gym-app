@@ -128,6 +128,147 @@ def delete_payment(idx):
     db.delete_payment(idx)
     return redirect(url_for("payments"))
 
+# ─── FINANCE ──────────────────────────────────────────────
+@app.route("/finance")
+def finance():
+    year = int(request.args.get("year", date.today().year))
+    transactions = db.get_transactions()
+    current_month = date.today().strftime("%Y-%m")
+
+    month_names = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran",
+                   "Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]
+
+    # Filter by year, add idx
+    year_txs = []
+    for i, tx in enumerate(transactions):
+        if tx.get("date","").startswith(str(year)):
+            year_txs.append({**tx, "idx": i})
+
+    # Monthly summary
+    monthly_summary = []
+    for m in range(1, 13):
+        month_str = f"{year}-{m:02d}"
+        inc = sum(t["amount"] for t in year_txs
+                  if t.get("date","").startswith(month_str) and t["type"]=="gelir")
+        exp = sum(t["amount"] for t in year_txs
+                  if t.get("date","").startswith(month_str) and t["type"]=="gider")
+        monthly_summary.append({
+            "month": month_str,
+            "month_name": month_names[m-1],
+            "income": inc, "expense": exp, "profit": inc - exp
+        })
+
+    yearly_income  = sum(r["income"]  for r in monthly_summary)
+    yearly_expense = sum(r["expense"] for r in monthly_summary)
+    yearly_profit  = yearly_income - yearly_expense
+
+    cm_data = next((r for r in monthly_summary if r["month"]==current_month), {})
+    this_month_income  = cm_data.get("income",0)
+    this_month_expense = cm_data.get("expense",0)
+    this_month_profit  = this_month_income - this_month_expense
+
+    categories = sorted({tx["category"] for tx in year_txs if tx.get("category")})
+    txs_sorted = sorted(year_txs, key=lambda x: x.get("date",""), reverse=True)
+
+    # Also include member payments as income transactions
+    payments = db.get_payments()
+    students = db.get_students()
+    pay_txs = []
+    for i, p in enumerate(payments):
+        if p.get("date","").startswith(str(year)):
+            sname = next((s["name"] for s in students if s["id"]==p["student_id"]), "?")
+            pay_txs.append({
+                "idx": f"pay_{i}", "date": p.get("date",""),
+                "type": "gelir", "category": "Üyelik Geliri",
+                "description": f"{sname} — {p.get('month','')} {p.get('note','')}",
+                "amount": p["amount"]
+            })
+
+    all_txs = sorted(txs_sorted + pay_txs, key=lambda x: x.get("date",""), reverse=True)
+    all_cats = sorted({tx["category"] for tx in all_txs if tx.get("category")})
+
+    # Recalculate yearly with payments
+    pay_income = sum(p["amount"] for p in payments if p.get("date","").startswith(str(year)))
+    yearly_income_total  = yearly_income + pay_income
+    yearly_profit_total  = yearly_income_total - yearly_expense
+
+    pay_this_month = sum(p["amount"] for p in payments if p.get("date","").startswith(current_month))
+    this_month_income_total = this_month_income + pay_this_month
+    this_month_profit_total = this_month_income_total - this_month_expense
+
+    # Update monthly summary with payment income
+    for row in monthly_summary:
+        m_pay = sum(p["amount"] for p in payments if p.get("date","").startswith(row["month"]))
+        row["income"]  += m_pay
+        row["profit"]   = row["income"] - row["expense"]
+
+    return render_template("finance.html",
+        year=year, monthly_summary=monthly_summary,
+        yearly_income=sum(r["income"] for r in monthly_summary),
+        yearly_expense=yearly_expense,
+        yearly_profit=sum(r["income"] for r in monthly_summary) - yearly_expense,
+        this_month_income=this_month_income_total,
+        this_month_expense=this_month_expense,
+        this_month_profit=this_month_profit_total,
+        transactions=all_txs, categories=all_cats)
+
+@app.route("/finance/add", methods=["GET","POST"])
+def add_transaction():
+    year = int(request.args.get("year", date.today().year))
+    if request.method == "POST":
+        try:
+            amount = float(request.form.get("amount","0"))
+        except:
+            amount = 0
+        db.add_transaction({
+            "date":        request.form.get("date", date.today().strftime("%Y-%m-%d")),
+            "type":        request.form.get("type","gelir"),
+            "category":    request.form.get("category",""),
+            "description": request.form.get("description",""),
+            "amount":      amount,
+        })
+        return redirect(url_for("finance", year=request.form.get("year", year)))
+    return render_template("finance_form.html",
+        year=year, today=date.today().strftime("%Y-%m-%d"))
+
+@app.route("/finance/delete/<path:idx>", methods=["POST"])
+def delete_transaction(idx):
+    year = request.args.get("year", date.today().year)
+    if not str(idx).startswith("pay_"):
+        db.delete_transaction(int(idx))
+    return redirect(url_for("finance", year=year))
+
+# ─── SCHEDULE ─────────────────────────────────────────────
+@app.route("/schedule")
+def schedule():
+    students = db.get_students()
+    days     = ["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"]
+    abbr_map = {"pzt":"Pazartesi","sal":"Salı","çar":"Çarşamba",
+                "per":"Perşembe","cum":"Cuma","cmt":"Cumartesi","paz":"Pazar"}
+    hours    = [f"{h:02d}:00" for h in range(6, 23)]
+
+    grid = {d: {h: [] for h in hours} for d in days}
+
+    for s in students:
+        sch = s.get("schedule","") or ""
+        parts = sch.replace(","," ").split()
+        found_days, found_time = [], None
+        for p in parts:
+            for sub in p.split("/"):
+                sl = sub.lower()
+                if sl in abbr_map:
+                    found_days.append(abbr_map[sl])
+            if ":" in p and p in hours:
+                found_time = p
+        if found_time:
+            first = s["name"].split()[0]
+            for d in found_days:
+                if d in grid and found_time in grid[d]:
+                    grid[d][found_time].append(first)
+
+    return render_template("schedule.html",
+        students=students, days=days, hours=hours, schedule_grid=grid)
+
 # ─── REPORTS ──────────────────────────────────────────────
 @app.route("/reports")
 def reports():
