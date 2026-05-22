@@ -24,7 +24,132 @@ def index():
         days_left=_days_left, paid_ids=paid_ids,
         current_month=current_month)
 
-@app.route("/student/add", methods=["GET","POST"])
+@app.route("/student/<int:sid>")
+def student_detail(sid):
+    students = db.get_students()
+    s = next((x for x in students if x["id"] == sid), None)
+    if not s:
+        return redirect(url_for("index"))
+
+    payments  = [p for p in db.get_payments() if p["student_id"] == sid]
+    total_paid = sum(p["amount"] for p in payments)
+    current_month = date.today().strftime("%Y-%m")
+    paid_this_month = any(p.get("month","") == current_month for p in payments)
+
+    attendance = db.get_attendance(sid)
+    total_att  = len(attendance)
+    came       = sum(1 for a in attendance if a["status"] == "geldi")
+    rate       = int((came / total_att * 100) if total_att > 0 else 0)
+
+    notes      = db.get_notes(sid)
+    days_left  = _days_left(s.get("end_date",""))
+
+    return render_template("student_detail.html",
+        student=s, payments=payments, total_paid=total_paid,
+        paid_this_month=paid_this_month, attendance=attendance,
+        attendance_rate=rate, notes=notes, days_left=days_left,
+        today=date.today().strftime("%Y-%m-%d"))
+
+@app.route("/student/note/<int:sid>", methods=["GET","POST"])
+def add_note(sid):
+    students = db.get_students()
+    s = next((x for x in students if x["id"] == sid), None)
+    if not s:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        db.add_note(sid, {
+            "date": date.today().strftime("%Y-%m-%d"),
+            "text": request.form.get("text","").strip()
+        })
+        return redirect(url_for("student_detail", sid=sid))
+    return render_template("note_form.html", student=s)
+
+@app.route("/student/<int:sid>/attendance", methods=["POST"])
+def mark_attendance(sid):
+    att_date   = request.form.get("date", date.today().strftime("%Y-%m-%d"))
+    att_action = request.form.get("action","geldi")
+    db.add_attendance(sid, {"date": att_date, "status": att_action})
+    return redirect(url_for("student_detail", sid=sid))
+
+@app.route("/receipt/<int:sid>")
+def receipt(sid):
+    students = db.get_students()
+    s = next((x for x in students if x["id"] == sid), None)
+    if not s:
+        return redirect(url_for("index"))
+    payments = sorted(
+        [p for p in db.get_payments() if p["student_id"] == sid],
+        key=lambda x: x.get("date",""), reverse=True)
+    last = payments[:3]
+    total = sum(p["amount"] for p in last)
+    receipt_no = f"{sid:04d}{date.today().strftime('%Y%m')}"
+    return render_template("receipt.html",
+        student=s, last_payments=last, total=total,
+        receipt_no=receipt_no, today=date.today().strftime("%Y-%m-%d"))
+
+# ─── PACKAGES ─────────────────────────────────────────────
+@app.route("/packages")
+def packages():
+    pkgs     = db.get_packages()
+    students = db.get_students()
+    for pkg in pkgs:
+        pkg["member_count"] = sum(1 for s in students if s.get("package") == pkg["name"])
+    return render_template("packages.html", packages=pkgs, students=students)
+
+@app.route("/packages/add", methods=["GET","POST"])
+def add_package():
+    if request.method == "POST":
+        try: price = float(request.form.get("price","0"))
+        except: price = 0
+        try: days = int(request.form.get("duration_days","30"))
+        except: days = 30
+        db.add_package({
+            "name":         request.form.get("name","").strip(),
+            "price":        price,
+            "duration_days":days,
+            "color":        request.form.get("color","#2563eb"),
+            "description":  request.form.get("description","").strip(),
+        })
+        return redirect(url_for("packages"))
+    return render_template("package_form.html", pkg=None, title="Yeni Paket")
+
+@app.route("/packages/edit/<int:idx>", methods=["GET","POST"])
+def edit_package(idx):
+    pkgs = db.get_packages()
+    if idx >= len(pkgs):
+        return redirect(url_for("packages"))
+    pkg = pkgs[idx]
+    if request.method == "POST":
+        try: price = float(request.form.get("price","0"))
+        except: price = 0
+        try: days = int(request.form.get("duration_days","30"))
+        except: days = 30
+        db.update_package(idx, {
+            "name":         request.form.get("name","").strip(),
+            "price":        price,
+            "duration_days":days,
+            "color":        request.form.get("color","#2563eb"),
+            "description":  request.form.get("description","").strip(),
+        })
+        return redirect(url_for("packages"))
+    return render_template("package_form.html", pkg=pkg, title="Paketi Düzenle")
+
+@app.route("/packages/delete/<int:idx>", methods=["POST"])
+def delete_package(idx):
+    db.delete_package(idx)
+    return redirect(url_for("packages"))
+
+@app.route("/packages/assign/<int:sid>", methods=["POST"])
+def assign_package(sid):
+    pkg_name = request.form.get("package","")
+    students = db.get_students()
+    s = next((x for x in students if x["id"] == sid), None)
+    if s:
+        s["package"] = pkg_name
+        db.update_student(sid, s)
+    return redirect(url_for("packages"))
+
+
 def add_student():
     if request.method == "POST":
         db.add_student(_form_to_student(request.form))
