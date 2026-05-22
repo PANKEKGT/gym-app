@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set active_page = "reports" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header"><h2>📈 Aylık Gelir</h2></div>
+  <div style="padding:20px">
+    {% if months %}
+      {% for month, val in months %}
+      <div class="bar-row">
+        <div class="bar-label">{{ month }}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:{{ (val/max_income*100)|int }}%"></div>
+        </div>
+        <div class="bar-val">₺{{ "{:,.0f}".format(val) }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#9ca3af;text-align:center;padding:20px">Henüz ödeme kaydı yok.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">
+  {% for status, count in status_count.items() %}
+    {% set color = '#16a34a' if status=='Aktif' else '#6b7280' if status=='Pasif' else '#d97706' %}
+    <div class="card" style="padding:24px;text-align:center">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:8px">{{ status }}</div>
+      <div style="font-size:36px;font-weight:700;color:{{ color }}">{{ count }}</div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:4px">öğrenci</div>
+    </div>
+  {% endfor %}
+  <div class="card" style="padding:24px;text-align:center">
+    <div style="font-size:13px;color:#6b7280;margin-bottom:8px">Toplam</div>
+    <div style="font-size:36px;font-weight:700;color:#111827">{{ total }}</div>
+    <div style="font-size:12px;color:#9ca3af;margin-top:4px">öğrenci</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>⚠️ Üyeliği Yakında Bitecekler</h2></div>
+  {% if expiring %}
+    <table>
+      <thead>
+        <tr><th>Öğrenci</th><th>Bitiş Tarihi</th><th>Kalan Gün</th></tr>
+      </thead>
+      <tbody>
+      {% for s, days in expiring %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td>{{ s.get('end_date','') }}</td>
+          <td>
+            <span class="badge {% if days <= 7 %}badge-red{% else %}badge-yellow{% endif %}">
+              {{ days }} gün
+            </span>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="padding:24px;text-align:center;color:#16a34a">✅ Yakında bitecek üyelik yok.</div>
+  {% endif %}
+</div>
+{% endblock %}

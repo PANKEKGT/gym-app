@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set active_page = "students" %}
+{% block content %}
+<div class="form-card">
+  <h2>📅 {{ student.name }} — Ders Programı</h2>
+  <form method="post">
+    <div class="form-group">
+      <label>Günler</label>
+      <div class="day-checks">
+        {% set days = [('Pzt','Pazartesi'),('Sal','Salı'),('Çar','Çarşamba'),
+                       ('Per','Perşembe'),('Cum','Cuma'),('Cmt','Cumartesi'),('Paz','Pazar')] %}
+        {% for abbr, full in days %}
+          <label class="day-check">
+            <input type="checkbox" name="days" value="{{ abbr }}"
+              {% if abbr in (student.get('schedule','') or '') %}checked{% endif %}>
+            {{ full }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Saat</label>
+      <select name="hour" style="width:160px">
+        {% for h in range(6,23) %}
+          {% set hstr = "%02d:00" | format(h) %}
+          <option value="{{ hstr }}"
+            {% if hstr in (student.get('schedule','') or '') %}selected{% endif %}>
+            {{ hstr }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-purple">💾 Kaydet</button>
+      <a href="/" class="btn btn-gray">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set active_page = "payments" %}
+{% block content %}
+
+<div class="stats">
+  <div class="stat-card"><div class="label">Bu Ay Tahsilat</div><div class="value" style="color:#16a34a">₺{{ "{:,.0f}".format(income) }}</div></div>
+  <div class="stat-card"><div class="label">Bekleyen</div><div class="value" style="color:#dc2626">₺{{ "{:,.0f}".format(pending) }}</div></div>
+  <div class="stat-card"><div class="label">Toplam Öğrenci</div><div class="value" style="color:#111827">{{ total_students }}</div></div>
+</div>
+
+<!-- Pending -->
+{% if pending_students %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header"><h2>⚠️ Bu Ay Ödemesi Beklenenler</h2></div>
+  {% for s in pending_students %}
+  <div class="pending-row">
+    <div>
+      <strong>{{ s.name }}</strong>
+      <span style="color:#6b7280;font-size:13px;margin-left:8px">{{ s.get('schedule','') }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <strong style="color:#92400e">₺{{ "{:,.0f}".format(s.monthly_fee) }}</strong>
+      <form method="post" action="/payment/quick/{{ s.id }}">
+        <button type="submit" class="btn btn-green btn-sm">✓ Ödendi</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-green">✅ Bu ay tüm ödemeler alındı!</div>
+{% endif %}
+
+<!-- Payment table -->
+<div class="card">
+  <div class="card-header">
+    <h2>Ödeme Geçmişi</h2>
+    <a href="/payment/add" class="btn btn-green">+ Ödeme Ekle</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="0">Tarih</th>
+          <th data-col="1">Öğrenci</th>
+          <th data-col="2">Tutar</th>
+          <th data-col="3">Ay</th>
+          <th data-col="4">Not</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for p in payments %}
+        <tr>
+          <td>{{ p.date }}</td>
+          <td><strong>{{ p.student_name }}</strong></td>
+          <td><strong style="color:#16a34a">₺{{ "{:,.0f}".format(p.amount) }}</strong></td>
+          <td>{{ p.month }}</td>
+          <td style="color:#6b7280">{{ p.note or '—' }}</td>
+          <td>
+            <form method="post" action="/payment/delete/{{ p.idx }}"
+                  onsubmit="return confirm('Bu ödeme silinsin mi?')">
+              <button type="submit" class="btn btn-red btn-sm">🗑️</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af">Henüz ödeme kaydı yok.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

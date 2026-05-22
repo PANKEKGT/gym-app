@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set active_page = "students" %}
+{% block content %}
+<div class="form-card">
+  <h2>{{ title }}</h2>
+  <form method="post">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ad Soyad *</label>
+        <input type="text" name="name" value="{{ student.name if student else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Telefon</label>
+        <input type="text" name="phone" value="{{ student.phone if student else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>E-posta</label>
+        <input type="email" name="email" value="{{ student.email if student else '' }}">
+      </div>
+      <div class="form-group">
+        <label>Doğum Tarihi</label>
+        <input type="date" name="birth_date" value="{{ student.birth_date if student else '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Başlangıç Tarihi *</label>
+        <input type="date" name="start_date" value="{{ student.start_date if student else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Bitiş Tarihi *</label>
+        <input type="date" name="end_date" value="{{ student.end_date if student else '' }}" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Aylık Ücret (₺) *</label>
+        <input type="number" name="monthly_fee" step="0.01" min="0"
+               value="{{ student.monthly_fee if student else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Üyelik Durumu</label>
+        <select name="status">
+          {% for opt in ['Aktif','Pasif','Askıda'] %}
+            <option value="{{ opt }}" {% if student and student.status == opt %}selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Ders Programı</label>
+      <input type="text" name="schedule" placeholder="ör: Pzt/Çar 09:00"
+             value="{{ student.schedule if student else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Notlar</label>
+      <textarea name="notes" rows="2" style="resize:vertical">{{ student.notes if student else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-green">💾 Kaydet</button>
+      <a href="/" class="btn btn-gray">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
