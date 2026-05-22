@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GymPro</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GymPro">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;min-height:100vh;display:flex;flex-direction:column}
@@ -98,6 +104,12 @@ tr:hover td{background:#f9fafb}
       <a href="/packages" class="{% if active_page=='packages' %}active{% endif %}">🎯 Paketler</a>
       <a href="/reports" class="{% if active_page=='reports' %}active{% endif %}">📊 Raporlar</a>
     </div>
+    <button id="installBtn" onclick="void(0)"
+      style="display:none;align-items:center;gap:6px;margin-left:auto;margin-right:12px;
+             background:#4ade80;color:#111827;border:none;border-radius:8px;
+             padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">
+      📲 Uygulamayı Yükle
+    </button>
   </div>
 </nav>
 <div class="container">
@@ -125,6 +137,33 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     document.querySelectorAll('th[data-col]').forEach(t => t.textContent = t.textContent.replace(/ [▲▼]/,''));
     th.textContent += asc ? ' ▲' : ' ▼';
   });
+});
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+}
+
+// PWA Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) {
+    btn.style.display = 'flex';
+    btn.addEventListener('click', () => {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        btn.style.display = 'none';
+      });
+    });
+  }
+});
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
 });
 </script>
 </body>
