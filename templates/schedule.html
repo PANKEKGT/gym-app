@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set active_page = "schedule" %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header"><h2>📅 Haftalık Ders Programı</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:80px">Saat</th>
+          {% for day in days %}
+          <th style="text-align:center">{{ day }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for hour in hours %}
+        <tr>
+          <td style="font-weight:600;color:#6b7280;white-space:nowrap">{{ hour }}</td>
+          {% for day in days %}
+            {% set cell = schedule_grid[day][hour] %}
+            <td style="text-align:center;padding:6px 8px;vertical-align:top;min-width:100px">
+              {% if cell %}
+                {% for name in cell %}
+                <span style="display:inline-block;background:#dcfce7;color:#15803d;
+                             border-radius:6px;padding:3px 8px;font-size:12px;
+                             font-weight:500;margin:2px">{{ name }}</span>
+                {% endfor %}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Student schedule list -->
+<div class="card">
+  <div class="card-header"><h2>👥 Öğrenci Ders Saatleri</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="0">Öğrenci</th>
+          <th data-col="1">Ders Programı</th>
+          <th data-col="2">Durum</th>
+          <th>Düzenle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td>
+            {% if s.get('schedule') %}
+              <span style="background:#eff6ff;color:#2563eb;padding:4px 10px;
+                           border-radius:6px;font-size:13px;font-weight:500">
+                {{ s.schedule }}
+              </span>
+            {% else %}
+              <span style="color:#9ca3af">— atanmamış —</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if s.status == 'Aktif' %}<span class="badge badge-green">Aktif</span>
+            {% else %}<span class="badge badge-gray">{{ s.status }}</span>{% endif %}
+          </td>
+          <td>
+            <a href="/student/schedule/{{ s.id }}" class="btn btn-purple btn-sm">📅 Düzenle</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;padding:32px;color:#9ca3af">Henüz öğrenci yok.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
